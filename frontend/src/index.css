@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { font-family: 'IBM Plex Sans Arabic', Tahoma, Arial, sans-serif; }
+body { direction: rtl; background: #f0f4f8; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation: fadeUp .22s ease; }
+
+@keyframes scaleIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
+.scale-in { animation: scaleIn .2s ease; }
+
+/* Print barcode styles - XPrinter */
+@media print {
+  body > *:not(#print-root) { display: none !important; }
+  #print-root { display: block !important; }
+  @page { margin: 2mm; size: auto; }
+}
+.xp-58 .bc-card { width:54mm; min-height:26mm; padding:1.5mm; border:0.3mm solid #000; display:inline-block; page-break-inside:avoid; text-align:center; margin:0.5mm; }
+.xp-58 .bc-card svg { width:50mm !important; height:14mm !important; }
+.xp-58 .bc-invnum { font-size:6.5pt; font-weight:900; font-family:monospace; letter-spacing:.4px; }
+.xp-58 .bc-name   { font-size:6pt; }
+.xp-58 .bc-loc    { font-size:5pt; color:#444; }
+.xp-58 .bc-footer { font-size:4.5pt; color:#666; margin-top:.5mm; }
+
+.xp-80 .bc-card { width:76mm; min-height:36mm; padding:2.5mm; border:0.3mm solid #000; display:inline-block; page-break-inside:avoid; text-align:center; margin:0.5mm; }
+.xp-80 .bc-card svg { width:70mm !important; height:20mm !important; }
+.xp-80 .bc-invnum { font-size:8.5pt; font-weight:900; font-family:monospace; letter-spacing:.5px; }
+.xp-80 .bc-name   { font-size:7.5pt; }
+.xp-80 .bc-loc    { font-size:6.5pt; color:#444; }
+.xp-80 .bc-footer { font-size:5.5pt; color:#666; margin-top:1mm; }

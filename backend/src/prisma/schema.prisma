@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS ───────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(BUREAU)
+  phone     String?
+  officeId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  office       Office?       @relation(fields: [officeId], references: [id])
+  movements    Movement[]
+  inventories  Inventory[]
+  requests     Request[]
+  approvals    Request[]     @relation("ApprovedBy")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN   // مسؤول الوسائل العامة
+  BUREAU  // مسؤول مكتب / مصلحة
+  VIEWER  // مشاهد فقط
+}
+
+// ─── CATEGORIES ──────────────────────────────────
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  icon        String   @default("📦")
+  description String?
+  createdAt   DateTime @default(now())
+
+  assets Asset[]
+
+  @@map("categories")
+}
+
+// ─── OFFICES ─────────────────────────────────────
+model Office {
+  id          String     @id @default(cuid())
+  name        String
+  type        OfficeType @default(BUREAU)
+  floor       String?
+  room        String?
+  phone       String?
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  users       User[]
+  assets      Asset[]
+  inventories Inventory[]
+  toRequests  Request[]  @relation("ToOffice")
+
+  @@map("offices")
+}
+
+enum OfficeType {
+  STORAGE    // مخزن
+  BUREAU     // مكتب إداري
+  SERVICE    // مصلحة
+  HALL       // قاعة
+  LAB        // مختبر
+  LIBRARY    // مكتبة
+}
+
+// ─── ASSETS ──────────────────────────────────────
+model Asset {
+  id           String    @id @default(cuid())
+  invNumber    String    @unique  // رقم الجرد UBB-YYYY-NNN
+  name         String
+  description  String?
+  serialNumber String?
+  quantity     Int       @default(0)
+  minQuantity  Int       @default(1)
+  unit         String    @default("قطعة")
+  condition    Condition @default(GOOD)
+  price        Float     @default(0)
+  hasBarcode   Boolean   @default(false)  // true إذا price > 500
+  purchaseDate DateTime?
+  warrantyDate DateTime?
+  supplierId   String?
+  categoryId   String
+  officeId     String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  category      Category        @relation(fields: [categoryId], references: [id])
+  office        Office          @relation(fields: [officeId], references: [id])
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id])
+  movements     Movement[]
+  inventoryItems InventoryItem[]
+  requestItems  RequestItem[]
+
+  @@map("assets")
+}
+
+enum Condition {
+  GOOD      // جيد
+  FAIR      // مقبول
+  POOR      // رديء
+  DAMAGED   // تالف
+  DISPOSED  // مُتلَف
+}
+
+// ─── SUPPLIERS ───────────────────────────────────
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  assets Asset[]
+
+  @@map("suppliers")
+}
+
+// ─── MOVEMENTS ───────────────────────────────────
+model Movement {
+  id             String        @id @default(cuid())
+  reference      String        @unique  // #MV-YYYY-NNN
+  type           MovementType
+  quantity       Int
+  notes          String?
+  date           DateTime      @default(now())
+  assetId        String
+  userId         String
+  fromOfficeId   String?
+  toOfficeId     String?
+  requestId      String?
+  createdAt      DateTime      @default(now())
+
+  asset      Asset   @relation(fields: [assetId], references: [id])
+  user       User    @relation(fields: [userId], references: [id])
+  fromOffice Office? @relation(fields: [fromOfficeId], references: [id], "FromOffice")
+  toOffice   Office? @relation(fields: [toOfficeId], references: [id], "ToOffice")
+
+  @@map("movements")
+}
+
+enum MovementType {
+  PURCHASE    // شراء
+  DISTRIBUTE  // توزيع
+  TRANSFER    // تحويل
+  RETURN      // إرجاع
+  DISPOSAL    // إتلاف
+}
+
+// ─── INVENTORY ───────────────────────────────────
+model Inventory {
+  id         String          @id @default(cuid())
+  reference  String          @unique  // #INV-YYYY-NNN
+  officeId   String
+  userId     String
+  date       DateTime        @default(now())
+  notes      String?
+  status     InventoryStatus @default(OPEN)
+  closedAt   DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  office Office         @relation(fields: [officeId], references: [id])
+  user   User           @relation(fields: [userId], references: [id])
+  items  InventoryItem[]
+
+  @@map("inventories")
+}
+
+enum InventoryStatus {
+  OPEN      // مفتوح - يُملأ يدوياً
+  CLOSED    // مغلق - تم الحفظ
+}
+
+model InventoryItem {
+  id          String @id @default(cuid())
+  inventoryId String
+  assetId     String
+  expectedQty Int    // الكمية المسجلة
+  actualQty   Int    // الكمية الفعلية (يدخلها المسؤول)
+  notes       String?
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+  asset     Asset     @relation(fields: [assetId], references: [id])
+
+  @@map("inventory_items")
+}
+
+// ─── REQUESTS ────────────────────────────────────
+model Request {
+  id           String        @id @default(cuid())
+  reference    String        @unique  // #RQ-YYYY-NNN
+  status       RequestStatus @default(PENDING)
+  priority     Priority      @default(NORMAL)
+  reason       String?
+  notes        String?       // ملاحظات مسؤول الوسائل
+  pickupDate   DateTime?     // موعد الاستلام
+  pickupTime   String?       // ساعة الاستلام
+  pickupPlace  String?       // مكان الاستلام
+  toOfficeId   String
+  requesterId  String
+  approverId   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  toOffice  Office       @relation("ToOffice", fields: [toOfficeId], references: [id])
+  requester User         @relation(fields: [requesterId], references: [id])
+  approver  User?        @relation("ApprovedBy", fields: [approverId], references: [id])
+  items     RequestItem[]
+
+  @@map("requests")
+}
+
+enum RequestStatus {
+  PENDING   // قيد الانتظار
+  REVIEWING // قيد الدراسة
+  APPROVED  // موافق
+  REJECTED  // مرفوض
+  DELIVERED // تم التسليم
+}
+
+enum Priority {
+  LOW     // منخفض
+  NORMAL  // عادي
+  HIGH    // عاجل
+  URGENT  // طارئ
+}
+
+model RequestItem {
+  id        String  @id @default(cuid())
+  requestId String
+  assetId   String?
+  itemName  String  // اسم الوسيلة المطلوبة
+  quantity  Int
+  notes     String?
+
+  request Request @relation(fields: [requestId], references: [id])
+  asset   Asset?  @relation(fields: [assetId], references: [id])
+
+  @@map("request_items")
+}
