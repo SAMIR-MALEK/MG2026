@@ -65,6 +65,8 @@ model Office {
   toRequests  Request[]  @relation("ToOffice")
 
   @@map("offices")
+  fromMovements Movement[] @relation("FromOffice")
+  toMovements   Movement[] @relation("ToOffice")
 }
 
 enum OfficeType {
