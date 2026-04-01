@@ -35,19 +35,7 @@ app.get('/api/health', (_, res) => {
   res.json({ ok: true, message: 'نظام الوسائل العامة - يعمل بشكل صحيح', timestamp: new Date() });
 });
 
-// ─── 404 ─────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'المسار غير موجود' });
-});
 
-// ─── ERROR HANDLER ───────────────────────────────
-app.use((err, req, res, next) => {
-  console.error('❌ خطأ:', err.message);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'خطأ داخلي في الخادم'
-  });
-});
 app.get('/api/setup', async (req, res) => {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
@@ -58,6 +46,24 @@ app.get('/api/setup', async (req, res) => {
   });
   res.json({ ok: true, message: 'تم إنشاء المستخدم', email: 'admin@univ-bba.dz', password: 'admin' });
 });
+
+// ─── 404 ─────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'المسار غير موجود' });
+});
+
+
+
+
+// ─── ERROR HANDLER ───────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('❌ خطأ:', err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'خطأ داخلي في الخادم'
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`\n✅ الخادم يعمل على المنفذ ${PORT}`);
   console.log(`📡 البيئة: ${process.env.NODE_ENV || 'development'}`);
