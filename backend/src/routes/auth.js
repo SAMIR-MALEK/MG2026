@@ -12,6 +12,9 @@ const loginSchema = z.object({
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
+console.log('=== LOGIN ATTEMPT ===');
+  console.log('email:', req.body.email);
+  console.log('password:', req.body.password);
   try {
     const { email, password } = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({
