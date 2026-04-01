@@ -7,7 +7,7 @@ const { authenticate } = require('../middleware/auth');
 
 const loginSchema = z.object({
   email: z.string().email('بريد إلكتروني غير صالح'),
-  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+  password: z.string().min(4, 'كلمة المرور يجب أن تكون 4 أحرف على الأقل')
 });
 
 // POST /api/auth/login
