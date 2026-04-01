@@ -18,7 +18,7 @@ router.post('/login', async (req, res) => {
       where: { email },
       include: { office: { select: { id: true, name: true, type: true } } }
     });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || (user.password !== password && !(await bcrypt.compare(password,user.password)))) {
       return res.status(401).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
     }
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
