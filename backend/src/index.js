@@ -1,4 +1,5 @@
 require('dotenv').config();
+const bcrypt = require('bcryptjs');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -47,7 +48,16 @@ app.use((err, req, res, next) => {
     message: err.message || 'خطأ داخلي في الخادم'
   });
 });
-
+app.get('/api/setup', async (req, res) => {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  const hash = await bcrypt.hash('admin', 10);
+  await prisma.user.deleteMany();
+  await prisma.user.create({
+    data: { id: 'usr1', name: 'مدير النظام', email: 'admin@univ-bba.dz', password: hash, role: 'ADMIN', officeId: 'off9' }
+  });
+  res.json({ ok: true, message: 'تم إنشاء المستخدم', email: 'admin@univ-bba.dz', password: 'admin' });
+});
 app.listen(PORT, () => {
   console.log(`\n✅ الخادم يعمل على المنفذ ${PORT}`);
   console.log(`📡 البيئة: ${process.env.NODE_ENV || 'development'}`);
