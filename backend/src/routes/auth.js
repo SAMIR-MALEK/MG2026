@@ -24,7 +24,8 @@ console.log('=== LOGIN ATTEMPT ===');
     if (!user || (user.password !== password && !(await bcrypt.compare(password,user.password)))) {
       return res.status(401).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
     }
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, {
+
       expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     });
     res.json({
