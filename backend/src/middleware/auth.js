@@ -1,40 +1,31 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 
 const authenticate = async (req, res, next) => {
   try {
     const header = req.headers.authorization;
     if (!header || !header.startsWith('Bearer ')) {
-      return res.status(401).json({ success: false, message: 'غير مصرح — يرجى تسجيل الدخول' });
+      return res.status(401).json({ success: false, message: 'غير مصرح' });
     }
     const token = header.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    const prisma = new PrismaClient();
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      include: { office: true }
-    });
-    await prisma.$disconnect();
-    
-    if (!user) return res.status(401).json({ success: false, message: 'المستخدم غير موجود' });
-    req.user = user;
+    req.user = { id: decoded.userId, role: decoded.role || 'ADMIN' };
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'رمز المصادقة غير صالح' });
+    return res.status(401).json({ success: false, message: 'رمز غير صالح' });
   }
 };
 
 const requireAdmin = (req, res, next) => {
   if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ success: false, message: 'هذا الإجراء يتطلب صلاحيات مسؤول الوسائل' });
+    return res.status(403).json({ success: false, message: 'غير مصرح' });
   }
   next();
 };
 
 const requireAdminOrBureau = (req, res, next) => {
   if (req.user.role === 'VIEWER') {
-    return res.status(403).json({ success: false, message: 'ليس لديك صلاحية' });
+    return res.status(403).json({ success: false, message: 'غير مصرح' });
   }
   next();
 };
