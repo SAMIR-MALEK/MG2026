@@ -1,9 +1,11 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client')
 
-const prisma = global.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
-});
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL + '?pgbouncer=true&connection_limit=1'
+    }
+  }
+})
 
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
-
-module.exports = prisma;
+module.exports = prisma
